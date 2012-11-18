@@ -18,19 +18,21 @@
 
 ; 执行导入之前需要手工创建好 finished文件夹
 
-#RequireAdmin  ;this line is for win7
+;#RequireAdmin  ;this line is for win7
 #include <File.au3>
 AutoItSetOption("MustDeclareVars",1)
 
 
 Dim $baseDir = "H:\jade\data"  ;need to change this depend on actual location
+
 main()
 
 Func main()
 
-	Dim $datamanager
+
 	Dim $jztWin = WinActivate("金字塔")
-	Dim $cmd = '"c:\program files\7-zip\7z.exe" e '  ;7zip 安装路径
+	Dim $cmd = '"c:\program files\7-zip\7z.exe" e -y '  ;7zip 安装路径
+	Dim $datamanager
 
 
 
@@ -48,14 +50,17 @@ Func main()
 	ControlClick($datamanager,"","SysTabControl321","left",1,267,5)  ;click 导入数据 tab
 	Local $subFolders =  _FileListToArray($baseDir , "*" , 2)  ;read sub folders
 	If @error = 4 Then
+		;MsgBox(0,"","no subFolders")
 		Return
 	EndIf
 	For $i =1 To $subFolders[0]
 		Local $subFolderName = $subFolders[$i]
+		;MsgBox(0,"subfolderName",$subFolderName)
 		if $subFolderName = "国内股票历史K线数据" or $subFolderName="国内期货历史K线数据" Then
 			Local $folders[3] =["日K线数据","5分钟K线数据","1分钟K线数据"]
 			For $dataFolderName in $folders
 				 Local $fullPath = $baseDir&"\"& $subFolderName & "\" & $dataFolderName
+				 ;MsgBox(0,$dataFolderName,$fullPath)
 				 Switch $dataFolderName  ;根据导入类型来选择下拉框
 					Case "1分钟K线数据"
 						ControlCommand($datamanager,"","ComboBox5","SelectString","1分钟数据")
@@ -66,18 +71,22 @@ Func main()
 
 					Case "日K线数据"
 						ControlCommand($datamanager,"","ComboBox5","SelectString","日线数据")
-					Default
+
+					Case Else
+
 						ContinueLoop ;防止有其他目录，有就跳过
 				EndSwitch
 				FileChangeDir($fullPath)
 				;MsgBox(0,"fullpath",$fullPath)
 				Local $rarFiles = _FileListToArray($fullPath , "*.rar" , 1)
 				If @error = 4 Then  ;没有rar文件，说明文件夹里面没有需要导入的文件，可以continue loop去下一种数据类型
+					;MsgBox(0,"no file","no rar file")
 					ContinueLoop
 				EndIf
 				Local $finishedDir = _FileListToArray($fullPath , "finished" , 2)
 				If @error = 4 Then ;finished folder doesnot exist
 					DirCreate($fullPath & "\finished")
+					;MsgBox(0,"info","finished folder created")
 				EndIf
 
 				For $i =1 To $rarFiles[0]
@@ -111,11 +120,12 @@ EndFunc
 
 Func import($fileName)
 
+	Local $dm
+	$dm = WinActivate("数据管理器")
 
-	WinActivate($datamanager)
-	ControlSetText($datamanager,"","Edit2",$fileName)
+	ControlSetText($dm,"","Edit2",$fileName)
 	sleep(500)
-	ControlClick($datamanager,"","Button50")
+	ControlClick($dm,"","Button50")
 	;MouseClick("left",767,630)
 	WinWait("金字塔","共导入了")
 	WinClose("金字塔","共导入了")
